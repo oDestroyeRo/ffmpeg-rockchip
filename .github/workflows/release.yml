@@ -118,9 +118,12 @@ jobs:
             echo 'Prebuilt FFmpeg 6.0, 6.1, 7.0, 7.1, 8.0, and 8.1 for Rockchip Debian 12 and 13 ARM64.'
             echo
             echo 'Includes ffmpeg, ffprobe, RKMPP codecs, RGA filters, and runtime libraries.'
+            echo 'Software libraries: x264, x265, WebP, vpx, aom, dav1d, Opus, LAME, Vorbis, soxr, and subtitle/text rendering.'
+            echo 'Includes libjpeg-turbo cjpeg/djpeg/jpegtran tools and a DejaVu Sans font. FFmpeg JPEG uses its native codec.'
             echo 'Choose the debian12 assets for Debian 12 (glibc 2.36), or debian13 assets for Debian 13 (glibc 2.41).'
             echo 'Hardware transcoding requires a Rockchip BSP kernel and device permissions.'
             echo 'Keep bin/ and lib/ together. Source archives and SHA-256 checksums are attached.'
+            echo 'Source archives also contain Debian sources for bundled libraries, JPEG tools, and the font.'
             echo 'Build/startup/software-codec checks passed; hardware transcoding is not tested on hosted runners.'
             echo
             for info in ./*.BUILDINFO.txt; do
