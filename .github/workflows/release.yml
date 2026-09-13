@@ -4,12 +4,12 @@ on:
   push:
     branches: [main, master]
     paths: ['.github/**']
+  # Required branch checks must run even when a PR only changes documentation.
   pull_request:
-    paths: ['.github/**']
   workflow_dispatch:
     inputs:
       publish:
-        description: Publish all four builds as a GitHub Release (default branch only)
+        description: Publish all builds as a GitHub Release (default branch only)
         type: boolean
         default: false
 
@@ -90,7 +90,7 @@ jobs:
           retention-days: 14
 
   publish:
-    name: Publish all four versions
+    name: Publish all versions
     needs: build
     if: github.event_name == 'workflow_dispatch' && inputs.publish
     runs-on: ubuntu-24.04
@@ -113,7 +113,7 @@ jobs:
           sha256sum --check ./*.sha256
           tag="rockchip-$(date -u +%Y%m%d)-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           {
-            echo 'Prebuilt FFmpeg 7.0, 7.1, 8.0, and 8.1 for Rockchip Debian 13 ARM64.'
+            echo 'Prebuilt FFmpeg 6.0, 6.1, 7.0, 7.1, 8.0, and 8.1 for Rockchip Debian 13 ARM64.'
             echo
             echo 'Includes ffmpeg, ffprobe, RKMPP codecs, RGA filters, and runtime libraries.'
             echo 'Built on Debian 13; requires glibc 2.41 or newer, a Rockchip BSP kernel, and device permissions.'
@@ -127,6 +127,6 @@ jobs:
             done
           } > RELEASE_NOTES.md
           gh release create "$tag" --target "$GITHUB_SHA" --draft \
-            --title "Rockchip FFmpeg 7.0 / 7.1 / 8.0 / 8.1 ($tag)" \
+            --title "Rockchip FFmpeg 6.0 / 6.1 / 7.0 / 7.1 / 8.0 / 8.1 ($tag)" \
             --notes-file RELEASE_NOTES.md ./*.tar.xz ./*.sha256 ./*.BUILDINFO.txt
           gh release edit "$tag" --draft=false

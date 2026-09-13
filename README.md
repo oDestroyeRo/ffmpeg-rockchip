@@ -25,7 +25,7 @@ The documentation is available on the [Wiki](https://github.com/nyanmisaka/ffmpe
 
 This fork includes a [Release Rockchip FFmpeg](.github/workflows/release.yml)
 workflow for **Debian 13 ARM64**. Each run tracks the upstream Rockchip branches
-`7.0`, `7.1`, `8.0`, and `8.1`, resolves their commit IDs once, and builds the
+`6.0`, `6.1`, `7.0`, `7.1`, `8.0`, and `8.1`, resolves their commit IDs once, and builds the
 latest version on each branch. It does not build unpatched FFmpeg release tags.
 The recipe lives on this fork's default branch (`master` currently; `main` is
 also supported). MPP tracks `jellyfin-mpp`, and RGA tracks `jellyfin-rga`, as
@@ -33,7 +33,7 @@ recommended by the [upstream compilation instructions](https://github.com/nyanmi
 branches are configured in
 [release-sources.json](.github/release-sources.json).
 Each run resolves both dependency branch heads once and passes those exact
-revisions to all four builds. RGA uses the
+revisions to all builds. RGA uses the
 [maintainer's GitHub mirror](https://github.com/nyanmisaka/rk-mirrors) because
 Gitee intermittently requires authentication from GitHub-hosted runners.
 Compilation and package smoke tests run inside a `debian:13-slim` container on
@@ -42,9 +42,9 @@ a native ARM64 GitHub runner, using Debian's compiler and development libraries.
 To create a release after installing the workflow on the default branch:
 
 1. Open **Actions → Release Rockchip FFmpeg → Run workflow**.
-2. Select the repository's default branch and enable **Publish all four builds
+2. Select the repository's default branch and enable **Publish all builds
    as a GitHub Release**.
-3. Run the workflow. A dated release is published only after all four builds and
+3. Run the workflow. A dated release is published only after all builds and
    smoke tests pass. A failed asset upload leaves an unpublished draft.
 
 Leave publishing disabled to produce downloadable Actions artifacts only.
