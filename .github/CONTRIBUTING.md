@@ -11,6 +11,8 @@ conversations, and these successful GitHub Actions checks against the current
 base branch:
 
 - `Resolve upstream Rockchip branches`
+- `FFmpeg 6.0 / Debian 13 ARM64`
+- `FFmpeg 6.1 / Debian 13 ARM64`
 - `FFmpeg 7.0 / Debian 13 ARM64`
 - `FFmpeg 7.1 / Debian 13 ARM64`
 - `FFmpeg 8.0 / Debian 13 ARM64`
@@ -33,7 +35,7 @@ workflows run. Dependabot proposes grouped weekly GitHub Actions updates; MPP
 and RGA continue to track their configured upstream branch heads on each build.
 
 Release publication remains manual: run **Release Rockchip FFmpeg** on the
-default branch with **Publish all four builds as a GitHub Release** enabled.
+default branch with **Publish all builds as a GitHub Release** enabled.
 Only the publishing job receives write access. It attaches all assets to a
 draft before publishing. Published `rockchip-*` tags cannot be changed or
 deleted, and immutable releases protect assets for releases published after
