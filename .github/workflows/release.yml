@@ -77,6 +77,8 @@ jobs:
         env:
           SERIES: ${{ matrix.series }}
           SOURCE_COMMIT: ${{ matrix.commit }}
+          MPP_COMMIT: ${{ matrix.mpp_commit }}
+          RGA_COMMIT: ${{ matrix.rga_commit }}
         run: bash .github/scripts/build-release.sh "$SERIES" "$SOURCE_COMMIT" "$GITHUB_WORKSPACE/dist"
 
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
