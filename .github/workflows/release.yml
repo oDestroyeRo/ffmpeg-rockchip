@@ -49,20 +49,29 @@ jobs:
           echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
 
   build:
-    name: FFmpeg ${{ matrix.series }} / Linux ARM64
+    name: FFmpeg ${{ matrix.series }} / Debian 13 ARM64
     needs: sources
-    runs-on: ubuntu-22.04-arm
+    runs-on: ubuntu-24.04-arm
+    container: debian:13-slim
+    defaults:
+      run:
+        shell: bash
     timeout-minutes: 120
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON(needs.sources.outputs.matrix) }}
     steps:
+      - name: Install checkout prerequisites
+        run: |
+          apt-get update
+          apt-get install --yes --no-install-recommends ca-certificates git
+
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
       - name: Install build dependencies
-        run: sudo bash .github/scripts/install-build-deps.sh
+        run: bash .github/scripts/install-build-deps.sh
 
       - name: Build and verify the release package
         env:
@@ -102,10 +111,10 @@ jobs:
           sha256sum --check ./*.sha256
           tag="rockchip-$(date -u +%Y%m%d)-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           {
-            echo 'Prebuilt FFmpeg 7.0, 7.1, 8.0, and 8.1 for Rockchip Linux ARM64.'
+            echo 'Prebuilt FFmpeg 7.0, 7.1, 8.0, and 8.1 for Rockchip Debian 13 ARM64.'
             echo
             echo 'Includes ffmpeg, ffprobe, RKMPP codecs, RGA filters, and runtime libraries.'
-            echo 'Requires glibc 2.35 or newer, a Rockchip BSP kernel, and device permissions.'
+            echo 'Built on Debian 13; requires glibc 2.41 or newer, a Rockchip BSP kernel, and device permissions.'
             echo 'Keep bin/ and lib/ together. Source archives and SHA-256 checksums are attached.'
             echo 'Build/startup/software-codec checks passed; hardware transcoding is not tested on hosted runners.'
             echo
