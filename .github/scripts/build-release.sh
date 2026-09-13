@@ -21,9 +21,9 @@ source /etc/os-release
 }
 jq -e --arg series "$series" '.ffmpeg.branches | index($series) != null' "$manifest" > /dev/null
 mpp_repository=$(jq -er '.mpp.repository' "$manifest")
-mpp_commit=$(jq -er '.mpp.commit' "$manifest")
+mpp_commit=${MPP_COMMIT:?Set MPP_COMMIT from resolve-sources.sh}
 rga_repository=$(jq -er '.rga.repository' "$manifest")
-rga_commit=$(jq -er '.rga.commit' "$manifest")
+rga_commit=${RGA_COMMIT:?Set RGA_COMMIT from resolve-sources.sh}
 for commit in "$ffmpeg_commit" "$mpp_commit" "$rga_commit"; do
     [[ $commit =~ ^[0-9a-f]{40}$ ]] || exit 1
 done
@@ -37,7 +37,7 @@ prefix="$work/prefix"
 checkout_source() {
     local url=$1 commit=$2 destination=$3 attempt
     git init --quiet "$destination"
-    # Gitee occasionally interrupts transfers; retry the same immutable source.
+    # Retry transient transfer failures without changing the resolved source.
     for attempt in 1 2 3; do
         if git -C "$destination" -c http.version=HTTP/1.1 \
             fetch --quiet --depth=1 "$url" "$commit"; then
