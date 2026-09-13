@@ -1,0 +1,14 @@
+{
+  "ffmpeg": {
+    "repository": "https://github.com/nyanmisaka/ffmpeg-rockchip.git",
+    "branches": ["7.0", "7.1", "8.0", "8.1"]
+  },
+  "mpp": {
+    "repository": "https://github.com/nyanmisaka/mpp.git",
+    "commit": "a9380ef333102ac318628f83b5f7a460d377749e"
+  },
+  "rga": {
+    "repository": "https://gitee.com/nyanmisaka/rga.git",
+    "commit": "1d330cc28551943bed3380261a5a9c6fbd58ff53"
+  }
+}
