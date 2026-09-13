@@ -28,11 +28,14 @@ workflow for **Debian 13 ARM64**. Each run tracks the upstream Rockchip branches
 `7.0`, `7.1`, `8.0`, and `8.1`, resolves their commit IDs once, and builds the
 latest version on each branch. It does not build unpatched FFmpeg release tags.
 The recipe lives on this fork's default branch (`master` currently; `main` is
-also supported). MPP and RGA revisions are pinned in
+also supported). MPP tracks `jellyfin-mpp`, and RGA tracks `jellyfin-rga`, as
+recommended by the [upstream compilation instructions](https://github.com/nyanmisaka/ffmpeg-rockchip/wiki/Compilation). Their repositories and
+branches are configured in
 [release-sources.json](.github/release-sources.json).
-RGA is downloaded from a [GitHub mirror](https://github.com/emcd39/rga) at the
-same pinned upstream commit because Gitee intermittently requires authentication
-from GitHub-hosted runners.
+Each run resolves both dependency branch heads once and passes those exact
+revisions to all four builds. RGA uses the
+[maintainer's GitHub mirror](https://github.com/nyanmisaka/rk-mirrors) because
+Gitee intermittently requires authentication from GitHub-hosted runners.
 Compilation and package smoke tests run inside a `debian:13-slim` container on
 a native ARM64 GitHub runner, using Debian's compiler and development libraries.
 
@@ -80,11 +83,15 @@ To reproduce a build on Debian 13 ARM64 (run as root inside a container):
 bash .github/scripts/install-build-deps.sh
 matrix=$(bash .github/scripts/resolve-sources.sh)
 commit=$(printf '%s\n' "$matrix" | jq -r '.include[] | select(.series == "8.1") | .commit')
+mpp_commit=$(printf '%s\n' "$matrix" | jq -r '.include[0].mpp_commit')
+rga_commit=$(printf '%s\n' "$matrix" | jq -r '.include[0].rga_commit')
+MPP_COMMIT="$mpp_commit" RGA_COMMIT="$rga_commit" \
 bash .github/scripts/build-release.sh 8.1 "$commit" "$PWD/dist"
 ```
 
-To rebuild a previous release, use its FFmpeg commit from `BUILDINFO.txt` and
-the recipe from its source archive instead of resolving the current branch.
+To rebuild a previous release, use its FFmpeg commit and set `MPP_COMMIT` and
+`RGA_COMMIT` to the revisions from `BUILDINFO.txt`, using the recipe from its
+source archive instead of resolving the current branches.
 
 
 ## Codecs and filters
