@@ -49,17 +49,19 @@ jobs:
           echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
 
   build:
-    name: FFmpeg ${{ matrix.series }} / Debian 13 ARM64
+    name: FFmpeg ${{ matrix.source.series }} / Debian ${{ matrix.debian }} ARM64
     needs: sources
     runs-on: ubuntu-24.04-arm
-    container: debian:13-slim
+    container: debian:${{ matrix.debian }}-slim
     defaults:
       run:
         shell: bash
     timeout-minutes: 120
     strategy:
       fail-fast: false
-      matrix: ${{ fromJSON(needs.sources.outputs.matrix) }}
+      matrix:
+        debian: ['12', '13']
+        source: ${{ fromJSON(needs.sources.outputs.matrix).include }}
     steps:
       - name: Install checkout prerequisites
         run: |
@@ -75,15 +77,15 @@ jobs:
 
       - name: Build and verify the release package
         env:
-          SERIES: ${{ matrix.series }}
-          SOURCE_COMMIT: ${{ matrix.commit }}
-          MPP_COMMIT: ${{ matrix.mpp_commit }}
-          RGA_COMMIT: ${{ matrix.rga_commit }}
+          SERIES: ${{ matrix.source.series }}
+          SOURCE_COMMIT: ${{ matrix.source.commit }}
+          MPP_COMMIT: ${{ matrix.source.mpp_commit }}
+          RGA_COMMIT: ${{ matrix.source.rga_commit }}
         run: bash .github/scripts/build-release.sh "$SERIES" "$SOURCE_COMMIT" "$GITHUB_WORKSPACE/dist"
 
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: ffmpeg-${{ matrix.series }}-rockchip-linux-arm64
+          name: ffmpeg-${{ matrix.source.series }}-rockchip-linux-arm64-debian${{ matrix.debian }}
           path: dist/*
           if-no-files-found: error
           compression-level: 0
@@ -100,7 +102,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
-          pattern: ffmpeg-*-rockchip-linux-arm64
+          pattern: ffmpeg-*-rockchip-linux-arm64-debian*
           path: dist
           merge-multiple: true
 
@@ -113,10 +115,11 @@ jobs:
           sha256sum --check ./*.sha256
           tag="rockchip-$(date -u +%Y%m%d)-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           {
-            echo 'Prebuilt FFmpeg 6.0, 6.1, 7.0, 7.1, 8.0, and 8.1 for Rockchip Debian 13 ARM64.'
+            echo 'Prebuilt FFmpeg 6.0, 6.1, 7.0, 7.1, 8.0, and 8.1 for Rockchip Debian 12 and 13 ARM64.'
             echo
             echo 'Includes ffmpeg, ffprobe, RKMPP codecs, RGA filters, and runtime libraries.'
-            echo 'Built on Debian 13; requires glibc 2.41 or newer, a Rockchip BSP kernel, and device permissions.'
+            echo 'Choose the debian12 assets for Debian 12 (glibc 2.36), or debian13 assets for Debian 13 (glibc 2.41).'
+            echo 'Hardware transcoding requires a Rockchip BSP kernel and device permissions.'
             echo 'Keep bin/ and lib/ together. Source archives and SHA-256 checksums are attached.'
             echo 'Build/startup/software-codec checks passed; hardware transcoding is not tested on hosted runners.'
             echo
@@ -127,6 +130,6 @@ jobs:
             done
           } > RELEASE_NOTES.md
           gh release create "$tag" --target "$GITHUB_SHA" --draft \
-            --title "Rockchip FFmpeg 6.0 / 6.1 / 7.0 / 7.1 / 8.0 / 8.1 ($tag)" \
+            --title "Rockchip FFmpeg for Debian 12 / 13 ($tag)" \
             --notes-file RELEASE_NOTES.md ./*.tar.xz ./*.sha256 ./*.BUILDINFO.txt
           gh release edit "$tag" --draft=false

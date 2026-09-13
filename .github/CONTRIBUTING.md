@@ -11,6 +11,12 @@ conversations, and these successful GitHub Actions checks against the current
 base branch:
 
 - `Resolve upstream Rockchip branches`
+- `FFmpeg 6.0 / Debian 12 ARM64`
+- `FFmpeg 6.1 / Debian 12 ARM64`
+- `FFmpeg 7.0 / Debian 12 ARM64`
+- `FFmpeg 7.1 / Debian 12 ARM64`
+- `FFmpeg 8.0 / Debian 12 ARM64`
+- `FFmpeg 8.1 / Debian 12 ARM64`
 - `FFmpeg 6.0 / Debian 13 ARM64`
 - `FFmpeg 6.1 / Debian 13 ARM64`
 - `FFmpeg 7.0 / Debian 13 ARM64`
