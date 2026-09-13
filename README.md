@@ -24,7 +24,7 @@ The documentation is available on the [Wiki](https://github.com/nyanmisaka/ffmpe
 ## Prebuilt Rockchip releases
 
 This fork includes a [Release Rockchip FFmpeg](.github/workflows/release.yml)
-workflow for **Linux ARM64**. Each run tracks the upstream Rockchip branches
+workflow for **Debian 13 ARM64**. Each run tracks the upstream Rockchip branches
 `7.0`, `7.1`, `8.0`, and `8.1`, resolves their commit IDs once, and builds the
 latest version on each branch. It does not build unpatched FFmpeg release tags.
 The recipe lives on this fork's default branch (`master` currently; `main` is
@@ -33,6 +33,8 @@ also supported). MPP and RGA revisions are pinned in
 RGA is downloaded from a [GitHub mirror](https://github.com/emcd39/rga) at the
 same pinned upstream commit because Gitee intermittently requires authentication
 from GitHub-hosted runners.
+Compilation and package smoke tests run inside a `debian:13-slim` container on
+a native ARM64 GitHub runner, using Debian's compiler and development libraries.
 
 To create a release after installing the workflow on the default branch:
 
@@ -64,17 +66,18 @@ tar -xf ffmpeg-8.1.2-rockchip-linux-arm64.tar.xz
 ./ffmpeg-8.1.2-rockchip-linux-arm64/bin/ffmpeg -hide_banner -filters
 ```
 
-These builds require a 64-bit ARM Linux userspace with **glibc 2.35 or newer**
-(for example Ubuntu 22.04+ or Debian 12+). They are not fully static binaries
+These builds target **Debian 13 (trixie) ARM64**, with a **glibc 2.41** runtime
+baseline. The earlier Ubuntu 22.04/Debian 12 compatibility baseline is no longer
+supported. They are not fully static binaries
 and do not target ARM32, Android, or musl-based systems. Hardware acceleration
 also requires the Rockchip BSP kernel and device permissions described below.
 Hosted ARM64 runners verify startup, RKMPP/RGA registration, and a software
 encode/decode round trip; they cannot verify hardware transcoding.
 
-To reproduce a build on Ubuntu 22.04 ARM64:
+To reproduce a build on Debian 13 ARM64 (run as root inside a container):
 
 ```sh
-sudo bash .github/scripts/install-build-deps.sh
+bash .github/scripts/install-build-deps.sh
 matrix=$(bash .github/scripts/resolve-sources.sh)
 commit=$(printf '%s\n' "$matrix" | jq -r '.include[] | select(.series == "8.1") | .commit')
 bash .github/scripts/build-release.sh 8.1 "$commit" "$PWD/dist"
