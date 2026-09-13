@@ -21,6 +21,65 @@ This project aims to provide full hardware transcoding pipeline in FFmpeg CLI fo
 ## How to use
 The documentation is available on the [Wiki](https://github.com/nyanmisaka/ffmpeg-rockchip/wiki) page of this project.
 
+## Prebuilt Rockchip releases
+
+This fork includes a [Release Rockchip FFmpeg](.github/workflows/release.yml)
+workflow for **Linux ARM64**. Each run tracks the upstream Rockchip branches
+`7.0`, `7.1`, `8.0`, and `8.1`, resolves their commit IDs once, and builds the
+latest version on each branch. It does not build unpatched FFmpeg release tags.
+The recipe lives on this fork's default branch (`master` currently; `main` is
+also supported). MPP and RGA revisions are pinned in
+[release-sources.json](.github/release-sources.json).
+
+To create a release after installing the workflow on the default branch:
+
+1. Open **Actions → Release Rockchip FFmpeg → Run workflow**.
+2. Select the repository's default branch and enable **Publish all four builds
+   as a GitHub Release**.
+3. Run the workflow. A dated release is published only after all four builds and
+   smoke tests pass. A failed asset upload leaves an unpublished draft.
+
+Leave publishing disabled to produce downloadable Actions artifacts only.
+Changes under `.github/` also run builds on pushes to `main`/`master` and pull
+requests. There is no scheduled build or automatic release on push. Upstream
+branch updates are picked up on the next run; custom FFmpeg changes made only
+on this fork's default branch are not included in those upstream sources.
+
+Each version provides a binary `.tar.xz`, a matching `-sources.tar.xz`, a
+`.sha256` checksum file, and `BUILDINFO.txt`. The binary archive contains
+`bin/ffmpeg`, `bin/ffprobe`, and runtime libraries in `lib/`, including MPP,
+RGA, DRM, OpenSSL, and zlib. The source archive includes the exact FFmpeg,
+MPP, and RGA source trees and the build scripts. Build information records
+the resolved source revisions, configure flags, and distribution packages.
+
+Extract the binary archive and keep its `bin/` and `lib/` directories together:
+
+```sh
+# Example filename; use the version provided by your release.
+tar -xf ffmpeg-8.1.2-rockchip-linux-arm64.tar.xz
+./ffmpeg-8.1.2-rockchip-linux-arm64/bin/ffmpeg -hide_banner -hwaccels
+./ffmpeg-8.1.2-rockchip-linux-arm64/bin/ffmpeg -hide_banner -filters
+```
+
+These builds require a 64-bit ARM Linux userspace with **glibc 2.35 or newer**
+(for example Ubuntu 22.04+ or Debian 12+). They are not fully static binaries
+and do not target ARM32, Android, or musl-based systems. Hardware acceleration
+also requires the Rockchip BSP kernel and device permissions described below.
+Hosted ARM64 runners verify startup, RKMPP/RGA registration, and a software
+encode/decode round trip; they cannot verify hardware transcoding.
+
+To reproduce a build on Ubuntu 22.04 ARM64:
+
+```sh
+sudo bash .github/scripts/install-build-deps.sh
+matrix=$(bash .github/scripts/resolve-sources.sh)
+commit=$(printf '%s\n' "$matrix" | jq -r '.include[] | select(.series == "8.1") | .commit')
+bash .github/scripts/build-release.sh 8.1 "$commit" "$PWD/dist"
+```
+
+To rebuild a previous release, use its FFmpeg commit from `BUILDINFO.txt` and
+the recipe from its source archive instead of resolving the current branch.
+
 
 ## Codecs and filters
 ### Decoders/Hwaccel

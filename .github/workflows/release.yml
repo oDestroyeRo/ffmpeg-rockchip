@@ -1,0 +1,121 @@
+name: Release Rockchip FFmpeg
+
+on:
+  push:
+    branches: [main, master]
+    paths: ['.github/**']
+  pull_request:
+    paths: ['.github/**']
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: Publish all four builds as a GitHub Release (default branch only)
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rockchip-release-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: false
+
+jobs:
+  sources:
+    name: Resolve upstream Rockchip branches
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    outputs:
+      matrix: ${{ steps.resolve.outputs.matrix }}
+    steps:
+      - name: Require the default branch for publishing
+        env:
+          PUBLISH: ${{ inputs.publish }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          if [[ "$PUBLISH" == true && "$GITHUB_REF" != "refs/heads/$DEFAULT_BRANCH" ]]; then
+            echo 'Publish releases from the repository default branch.' >&2
+            exit 1
+          fi
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Resolve each branch once for this release
+        id: resolve
+        run: |
+          matrix=$(bash .github/scripts/resolve-sources.sh)
+          echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
+
+  build:
+    name: FFmpeg ${{ matrix.series }} / Linux ARM64
+    needs: sources
+    runs-on: ubuntu-22.04-arm
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.sources.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install build dependencies
+        run: sudo bash .github/scripts/install-build-deps.sh
+
+      - name: Build and verify the release package
+        env:
+          SERIES: ${{ matrix.series }}
+          SOURCE_COMMIT: ${{ matrix.commit }}
+        run: bash .github/scripts/build-release.sh "$SERIES" "$SOURCE_COMMIT" "$GITHUB_WORKSPACE/dist"
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ffmpeg-${{ matrix.series }}-rockchip-linux-arm64
+          path: dist/*
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
+
+  publish:
+    name: Publish all four versions
+    needs: build
+    if: github.event_name == 'workflow_dispatch' && inputs.publish
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: ffmpeg-*-rockchip-linux-arm64
+          path: dist
+          merge-multiple: true
+
+      - name: Verify and publish assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        working-directory: dist
+        run: |
+          sha256sum --check ./*.sha256
+          tag="rockchip-$(date -u +%Y%m%d)-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          {
+            echo 'Prebuilt FFmpeg 7.0, 7.1, 8.0, and 8.1 for Rockchip Linux ARM64.'
+            echo
+            echo 'Includes ffmpeg, ffprobe, RKMPP codecs, RGA filters, and runtime libraries.'
+            echo 'Requires glibc 2.35 or newer, a Rockchip BSP kernel, and device permissions.'
+            echo 'Keep bin/ and lib/ together. Source archives and SHA-256 checksums are attached.'
+            echo 'Build/startup/software-codec checks passed; hardware transcoding is not tested on hosted runners.'
+            echo
+            for info in ./*.BUILDINFO.txt; do
+              echo '```text'
+              cat "$info"
+              echo '```'
+            done
+          } > RELEASE_NOTES.md
+          gh release create "$tag" --target "$GITHUB_SHA" --draft \
+            --title "Rockchip FFmpeg 7.0 / 7.1 / 8.0 / 8.1 ($tag)" \
+            --notes-file RELEASE_NOTES.md ./*.tar.xz ./*.sha256 ./*.BUILDINFO.txt
+          gh release edit "$tag" --draft=false
