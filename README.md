@@ -30,6 +30,9 @@ latest version on each branch. It does not build unpatched FFmpeg release tags.
 The recipe lives on this fork's default branch (`master` currently; `main` is
 also supported). MPP and RGA revisions are pinned in
 [release-sources.json](.github/release-sources.json).
+RGA is downloaded from a [GitHub mirror](https://github.com/emcd39/rga) at the
+same pinned upstream commit because Gitee intermittently requires authentication
+from GitHub-hosted runners.
 
 To create a release after installing the workflow on the default branch:
 
