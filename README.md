@@ -59,10 +59,37 @@ Each version and Debian release provides a binary `.tar.xz`, a matching
 include `debian12` or `debian13`, so the packages can share one release without
 overwriting each other. Choose the suffix matching your Debian version.
 The binary archive contains
-`bin/ffmpeg`, `bin/ffprobe`, and runtime libraries in `lib/`, including MPP,
-RGA, DRM, OpenSSL, and zlib. The source archive includes the exact FFmpeg,
-MPP, and RGA source trees and the build scripts. Build information records
+`bin/ffmpeg`, `bin/ffprobe`, the libjpeg-turbo tools `cjpeg`, `djpeg`, and
+`jpegtran`, and their runtime libraries in `lib/`. Alongside MPP, RGA, DRM,
+OpenSSL, and zlib, the builds include these common libraries:
+
+| Use | Libraries / FFmpeg names |
+| --- | --- |
+| Software H.264 / H.265 encoding | `libx264`, `libx264rgb`, `libx265` |
+| WebP images | `libwebp`, `libwebp_anim` |
+| VP8 / VP9 encoding | `libvpx`, `libvpx-vp9` |
+| AV1 encoding / decoding | `libaom-av1`, `libdav1d` |
+| Opus / MP3 / Vorbis audio | `libopus`, `libmp3lame`, `libvorbis` |
+| Audio resampling | `libsoxr` (`aresample=resampler=soxr`) |
+| Subtitles / text | libass, fontconfig, FreeType; HarfBuzz enabled explicitly on FFmpeg 6.1+ |
+
+The software encoders coexist with `h264_rkmpp`, `hevc_rkmpp`, and
+`mjpeg_rkmpp`; select the encoder with `-c:v`. Native FFmpeg codecs such as
+AAC, FLAC, PNG, and JPEG/MJPEG remain available. FFmpeg uses its own JPEG
+implementation, so libjpeg-turbo is supplied as separate tools and does not
+replace FFmpeg's JPEG encoder. A DejaVu Sans font is included under
+`share/fonts/` for `drawtext=fontfile=...` or `subtitles=...:fontsdir=...` on
+systems without installed fonts. For text/subtitles on a minimal system with
+no fontconfig configuration, set `FONTCONFIG_FILE` to the absolute path of
+the included `share/fonts/fonts.conf`; it locates the bundled font relative
+to that file.
+
+The source archive includes the exact FFmpeg, MPP, and RGA source trees,
+the build scripts, and Debian source packages for the bundled libraries,
+JPEG tools, and font. Build information records
 the resolved source revisions, configure flags, and distribution packages.
+License notices and the referenced standard license texts are included in
+`share/licenses/`.
 
 Extract the binary archive and keep its `bin/` and `lib/` directories together:
 
@@ -78,8 +105,10 @@ the `debian13` builds target **Debian 13 (trixie) ARM64** with **glibc 2.41**.
 They are not fully static binaries and do not target Ubuntu 22.04, ARM32,
 Android, or musl-based systems. Hardware acceleration
 also requires the Rockchip BSP kernel and device permissions described below.
-Hosted ARM64 runners verify startup, RKMPP/RGA registration, and a software
-encode/decode round trip; they cannot verify hardware transcoding.
+Hosted ARM64 runners verify startup, RKMPP/RGA registration, software
+video/audio/image encode/decode, AV1 decoding with dav1d, soxr resampling,
+text/subtitle rendering, and the JPEG tools; they cannot verify hardware
+transcoding.
 
 To reproduce a build on Debian 12 or 13 ARM64 (run as root inside the matching
 Debian container; the script detects its version):
