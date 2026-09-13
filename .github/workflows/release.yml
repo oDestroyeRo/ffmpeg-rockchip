@@ -4,8 +4,8 @@ on:
   push:
     branches: [main, master]
     paths: ['.github/**']
+  # Required branch checks must run even when a PR only changes documentation.
   pull_request:
-    paths: ['.github/**']
   workflow_dispatch:
     inputs:
       publish:
