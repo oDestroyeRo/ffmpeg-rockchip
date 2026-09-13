@@ -14,7 +14,7 @@ for binary in "$package"/bin/*; do
     if grep -q 'not found' "$test_dir/ldd"; then cat "$test_dir/ldd"; exit 1; fi
     while read -r library; do
         case "$(basename "$library")" in
-            libc.so.*|libm.so.*|libpthread.so.*|libdl.so.*|librt.so.*|libresolv.so.*) continue ;;
+            libc.so.*|libm.so.*|libmvec.so.*|libpthread.so.*|libdl.so.*|librt.so.*|libresolv.so.*) continue ;;
         esac
         if [[ $(realpath "$library") != "$package/lib/"* ]]; then
             echo "Unbundled runtime library: $library" >&2

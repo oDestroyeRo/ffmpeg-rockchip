@@ -111,7 +111,7 @@ if grep -q 'not found' "$work/ldd.txt"; then cat "$work/ldd.txt"; exit 1; fi
 runtime_packages=(libjpeg-turbo-progs fonts-dejavu-core)
 while read -r library; do
     case "$(basename "$library")" in
-        libc.so.*|libm.so.*|libpthread.so.*|libdl.so.*|librt.so.*|libresolv.so.*) continue ;;
+        libc.so.*|libm.so.*|libmvec.so.*|libpthread.so.*|libdl.so.*|librt.so.*|libresolv.so.*) continue ;;
     esac
     cp -L "$library" "$package/lib/"
     if [[ $library != "$prefix/lib/"* ]]; then
