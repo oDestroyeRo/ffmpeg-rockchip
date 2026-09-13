@@ -10,15 +10,16 @@ repository=$(jq -er '.ffmpeg.repository' "$manifest")
 jobs=${JOBS:-$(nproc)}
 
 [[ $(uname -s) == Linux && $(uname -m) == aarch64 ]] || {
-    echo 'Build on Debian 13 ARM64.' >&2
+    echo 'Build on Debian 12 or 13 ARM64.' >&2
     exit 1
 }
 # shellcheck source=/dev/null
 source /etc/os-release
-[[ ${ID:-} == debian && ${VERSION_ID:-} == 13 ]] || {
-    echo 'Build on Debian 13 ARM64.' >&2
-    exit 1
-}
+case "${ID:-}:${VERSION_ID:-}" in
+    debian:12) openssl_package=libssl3; glibc_baseline=2.36 ;;
+    debian:13) openssl_package=libssl3t64; glibc_baseline=2.41 ;;
+    *) echo 'Build on Debian 12 or 13 ARM64.' >&2; exit 1 ;;
+esac
 jq -e --arg series "$series" '.ffmpeg.branches | index($series) != null' "$manifest" > /dev/null
 mpp_repository=$(jq -er '.mpp.repository' "$manifest")
 mpp_commit=${MPP_COMMIT:?Set MPP_COMMIT from resolve-sources.sh}
@@ -58,7 +59,7 @@ version=$(cat "$work/ffmpeg/RELEASE")
     exit 1
 }
 [[ $version =~ ^[0-9]+\.[0-9]+(\.[0-9]+)?$ ]] || exit 1
-name="ffmpeg-${version}-rockchip-linux-arm64"
+name="ffmpeg-${version}-rockchip-linux-arm64-debian${VERSION_ID}"
 package="$work/$name"
 mkdir -p "$prefix" "$package/bin" "$package/lib" "$package/share/licenses"
 
@@ -106,7 +107,7 @@ done
 cp "$work/ffmpeg"/COPYING* "$work/ffmpeg/LICENSE.md" "$package/share/licenses/"
 cp -R "$work/mpp/LICENSES" "$package/share/licenses/mpp"
 cp "$work/rga/COPYING" "$package/share/licenses/rga.txt"
-for dependency in libdrm2 libssl3t64 libzstd1 zlib1g libstdc++6 libgcc-s1; do
+for dependency in libdrm2 "$openssl_package" libzstd1 zlib1g libstdc++6 libgcc-s1; do
     cp "/usr/share/doc/$dependency/copyright" "$package/share/licenses/$dependency.txt"
 done
 
@@ -116,10 +117,10 @@ done
     printf 'MPP: %s @ %s\nRGA: %s @ %s\n' "$mpp_repository" "$mpp_commit" "$rga_repository" "$rga_commit"
     printf 'Workflow commit: %s\n' "${GITHUB_SHA:-local}"
     printf 'Build OS: %s\n' "$PRETTY_NAME"
-    printf 'Architecture: aarch64; runtime baseline: Debian 13 (glibc 2.41)\n'
+    printf 'Architecture: aarch64; runtime baseline: Debian %s (glibc %s)\n' "$VERSION_ID" "$glibc_baseline"
     printf 'Hardware transcoding requires a Rockchip BSP kernel and device permissions.\n'
     dpkg-query -W -f='${Package}=${Version}\n' \
-        gcc g++ libc6 libdrm2 libssl3t64 libzstd1 zlib1g libstdc++6 libgcc-s1
+        gcc g++ libc6 libdrm2 "$openssl_package" libzstd1 zlib1g libstdc++6 libgcc-s1
     "$package/bin/ffmpeg" -version
 } > "$package/BUILDINFO.txt"
 

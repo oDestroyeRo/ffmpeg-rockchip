@@ -24,7 +24,7 @@ The documentation is available on the [Wiki](https://github.com/nyanmisaka/ffmpe
 ## Prebuilt Rockchip releases
 
 This fork includes a [Release Rockchip FFmpeg](.github/workflows/release.yml)
-workflow for **Debian 13 ARM64**. Each run tracks the upstream Rockchip branches
+workflow for **Debian 12 and 13 ARM64**. Each run tracks the upstream Rockchip branches
 `6.0`, `6.1`, `7.0`, `7.1`, `8.0`, and `8.1`, resolves their commit IDs once, and builds the
 latest version on each branch. It does not build unpatched FFmpeg release tags.
 The recipe lives on this fork's default branch (`master` currently; `main` is
@@ -36,8 +36,9 @@ Each run resolves both dependency branch heads once and passes those exact
 revisions to all builds. RGA uses the
 [maintainer's GitHub mirror](https://github.com/nyanmisaka/rk-mirrors) because
 Gitee intermittently requires authentication from GitHub-hosted runners.
-Compilation and package smoke tests run inside a `debian:13-slim` container on
-a native ARM64 GitHub runner, using Debian's compiler and development libraries.
+Each FFmpeg version is built separately in `debian:12-slim` and `debian:13-slim`
+containers on native ARM64 GitHub runners, using each Debian release's compiler
+and development libraries. Every run produces twelve build variants.
 
 To create a release after installing the workflow on the default branch:
 
@@ -48,13 +49,16 @@ To create a release after installing the workflow on the default branch:
    smoke tests pass. A failed asset upload leaves an unpublished draft.
 
 Leave publishing disabled to produce downloadable Actions artifacts only.
-Changes under `.github/` also run builds on pushes to `main`/`master` and pull
-requests. There is no scheduled build or automatic release on push. Upstream
+Changes under `.github/` also run builds on pushes to `main`/`master`; every pull
+request runs the builds. There is no scheduled build or automatic release on push. Upstream
 branch updates are picked up on the next run; custom FFmpeg changes made only
 on this fork's default branch are not included in those upstream sources.
 
-Each version provides a binary `.tar.xz`, a matching `-sources.tar.xz`, a
-`.sha256` checksum file, and `BUILDINFO.txt`. The binary archive contains
+Each version and Debian release provides a binary `.tar.xz`, a matching
+`-sources.tar.xz`, a `.sha256` checksum file, and `BUILDINFO.txt`. Filenames
+include `debian12` or `debian13`, so the packages can share one release without
+overwriting each other. Choose the suffix matching your Debian version.
+The binary archive contains
 `bin/ffmpeg`, `bin/ffprobe`, and runtime libraries in `lib/`, including MPP,
 RGA, DRM, OpenSSL, and zlib. The source archive includes the exact FFmpeg,
 MPP, and RGA source trees and the build scripts. Build information records
@@ -63,21 +67,22 @@ the resolved source revisions, configure flags, and distribution packages.
 Extract the binary archive and keep its `bin/` and `lib/` directories together:
 
 ```sh
-# Example filename; use the version provided by your release.
-tar -xf ffmpeg-8.1.2-rockchip-linux-arm64.tar.xz
-./ffmpeg-8.1.2-rockchip-linux-arm64/bin/ffmpeg -hide_banner -hwaccels
-./ffmpeg-8.1.2-rockchip-linux-arm64/bin/ffmpeg -hide_banner -filters
+# Example for Debian 12; use debian13 on Debian 13.
+tar -xf ffmpeg-8.1.2-rockchip-linux-arm64-debian12.tar.xz
+./ffmpeg-8.1.2-rockchip-linux-arm64-debian12/bin/ffmpeg -hide_banner -hwaccels
+./ffmpeg-8.1.2-rockchip-linux-arm64-debian12/bin/ffmpeg -hide_banner -filters
 ```
 
-These builds target **Debian 13 (trixie) ARM64**, with a **glibc 2.41** runtime
-baseline. The earlier Ubuntu 22.04/Debian 12 compatibility baseline is no longer
-supported. They are not fully static binaries
-and do not target ARM32, Android, or musl-based systems. Hardware acceleration
+The `debian12` builds target **Debian 12 (bookworm) ARM64** with **glibc 2.36**;
+the `debian13` builds target **Debian 13 (trixie) ARM64** with **glibc 2.41**.
+They are not fully static binaries and do not target Ubuntu 22.04, ARM32,
+Android, or musl-based systems. Hardware acceleration
 also requires the Rockchip BSP kernel and device permissions described below.
 Hosted ARM64 runners verify startup, RKMPP/RGA registration, and a software
 encode/decode round trip; they cannot verify hardware transcoding.
 
-To reproduce a build on Debian 13 ARM64 (run as root inside a container):
+To reproduce a build on Debian 12 or 13 ARM64 (run as root inside the matching
+Debian container; the script detects its version):
 
 ```sh
 bash .github/scripts/install-build-deps.sh
